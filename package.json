@@ -1,0 +1,37 @@
+{
+  "name": "obsidian-task-manager",
+  "version": "0.1.0",
+  "description": "Manage tasks and create configurable daily work reports from an Obsidian sidebar.",
+  "main": "main.js",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ITNQ18/obsidian-task-manager.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ITNQ18/obsidian-task-manager/issues"
+  },
+  "homepage": "https://github.com/ITNQ18/obsidian-task-manager#readme",
+  "scripts": {
+    "build": "npm run typecheck && node esbuild.config.mjs production",
+    "dev": "node esbuild.config.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "check": "npm run typecheck && npm test && npm run build"
+  },
+  "keywords": [
+    "obsidian",
+    "obsidian-plugin",
+    "daily-report",
+    "task-management",
+    "productivity"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.25.0",
+    "obsidian": "latest",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0"
+  }
+}

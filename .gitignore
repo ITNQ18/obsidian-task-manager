@@ -1,0 +1,16 @@
+# Editors
+.vscode/
+.idea/
+*.iml
+
+# Dependencies and generated files
+node_modules/
+main.js
+*.map
+
+# Obsidian user settings
+data.json
+
+# Operating systems
+.DS_Store
+Thumbs.db
