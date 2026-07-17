@@ -1,6 +1,6 @@
 {
   "name": "obsidian-task-manager",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Manage tasks and create configurable daily work reports from a compact sidebar.",
   "main": "main.js",
   "type": "module",

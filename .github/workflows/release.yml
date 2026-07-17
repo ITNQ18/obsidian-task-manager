@@ -13,10 +13,10 @@ jobs:
       contents: write
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - name: Verify tag and manifest version
         shell: bash
@@ -37,14 +37,16 @@ jobs:
           cd release
           zip -r ../task-manager.zip task-manager
       - name: Attest Obsidian release assets
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest@v4
         with:
           subject-path: |
             main.js
+            task-manager.zip
             styles.css
       - name: Create GitHub release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
+          draft: true
           generate_release_notes: true
           files: |
             task-manager.zip
