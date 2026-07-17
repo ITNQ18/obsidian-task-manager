@@ -213,32 +213,32 @@
   height: 20px;
 }
 
-.task-manager-task-content {
-  display: block !important;
-  justify-content: flex-start !important;
+.task-manager-view .task-manager-task-row button.task-manager-task-content {
+  display: block;
+  justify-content: flex-start;
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
   height: 58px;
   min-height: 58px;
-  margin: 0 !important;
+  margin: 0;
   padding: var(--size-4-2) var(--size-4-3);
   overflow: hidden;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   color: var(--text-normal);
   font: inherit;
-  text-align: left !important;
-  white-space: normal !important;
+  text-align: left;
+  white-space: normal;
   cursor: pointer;
 }
 
-.task-manager-task-content:hover,
-.task-manager-task-content:focus-visible {
-  background: var(--background-modifier-hover) !important;
-  box-shadow: none !important;
+.task-manager-view .task-manager-task-row button.task-manager-task-content:hover,
+.task-manager-view .task-manager-task-row button.task-manager-task-content:focus-visible {
+  background: var(--background-modifier-hover);
+  box-shadow: none;
 }
 
 .task-manager-task-text {
@@ -388,6 +388,15 @@
   margin: calc(-1 * var(--size-4-2)) 0 var(--size-4-4);
 }
 
+.task-manager-filename-setting {
+  flex-wrap: wrap;
+}
+
+.task-manager-filename-extras {
+  flex: 0 0 100%;
+  min-width: 0;
+}
+
 .task-manager-insert-hint {
   margin: 0 0 var(--size-4-2);
   line-height: var(--line-height-normal);
@@ -471,17 +480,17 @@
   color: var(--text-normal);
 }
 
-.task-manager-template-preview-content.markdown-preview-view {
+.task-manager-settings .task-manager-template-preview-content.markdown-preview-view {
   position: static;
   width: 100%;
   min-height: 0;
   padding: 0;
   overflow: visible;
-  text-align: left !important;
+  text-align: left;
 }
 
-.task-manager-template-preview-content :is(h1, h2, h3, h4, h5, h6, p, ul, ol, li) {
-  text-align: left !important;
+.task-manager-settings .task-manager-template-preview-content :is(h1, h2, h3, h4, h5, h6, p, ul, ol, li) {
+  text-align: left;
 }
 
 .task-manager-template-actions {

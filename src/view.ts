@@ -330,7 +330,7 @@ export class TaskManagerView extends ItemView {
         },
       });
       setIcon(completeButton, "circle-dashed");
-      completeButton.addEventListener("click", async () => {
+      const completeTask = async (): Promise<void> => {
         completeButton.disabled = true;
         completeButton.addClass("is-completing");
         setIcon(completeButton, "circle-check");
@@ -340,7 +340,8 @@ export class TaskManagerView extends ItemView {
           completeButton.removeClass("is-completing");
           completeButton.disabled = false;
         }
-      });
+      };
+      completeButton.addEventListener("click", () => void completeTask());
 
       const taskButton = row.createEl("button", {
         cls: "task-manager-task-content",
@@ -419,7 +420,7 @@ export class TaskManagerView extends ItemView {
       cls: "mod-cta task-manager-primary-button",
       attr: { type: "button" },
     });
-    primaryButton.addEventListener("click", async () => {
+    const openDailyReport = async (): Promise<void> => {
       primaryButton.disabled = true;
       try {
         await this.plugin.openOrCreateTodayReport();
@@ -427,7 +428,8 @@ export class TaskManagerView extends ItemView {
         primaryButton.disabled = false;
         await this.render();
       }
-    });
+    };
+    primaryButton.addEventListener("click", () => void openDailyReport());
     this.renderFormatHint(
       container,
       this.plugin.t("dailyTaskRecognitionTitle"),

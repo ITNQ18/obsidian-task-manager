@@ -9,7 +9,9 @@ jobs:
   release:
     runs-on: ubuntu-latest
     permissions:
+      attestations: write
       contents: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,13 +29,21 @@ jobs:
           npm ci
           npm test
           npm run build
-      - name: Package plugin
+      - name: Package plugin for manual installation
         shell: bash
         run: |
           mkdir -p release/task-manager
           cp main.js manifest.json styles.css release/task-manager/
           cd release
           zip -r ../task-manager.zip task-manager
+      - name: Attest release assets
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            main.js
+            manifest.json
+            styles.css
+            task-manager.zip
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}

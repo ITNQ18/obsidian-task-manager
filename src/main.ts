@@ -43,7 +43,7 @@ import {
   type TaskRecord,
 } from "./tasks";
 
-interface TaskManagerSettings {
+export interface TaskManagerSettings {
   language: LanguageSetting;
   staleTaskDays: number;
   askCompletionTime: boolean;
@@ -79,7 +79,7 @@ export default class TaskManagerPlugin extends Plugin {
     this.addSettingTab(new TaskManagerSettingTab(this.app, this));
 
     this.addCommand({
-      id: "open-task-manager-sidebar",
+      id: "open-sidebar",
       name: this.t("commandOpenManager"),
       callback: () => void this.activateView(true),
     });
@@ -105,10 +105,6 @@ export default class TaskManagerPlugin extends Plugin {
     this.app.workspace.onLayoutReady(() => {
       void this.activateView(false);
     });
-  }
-
-  onunload(): void {
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_TASK_MANAGER);
   }
 
   t(key: TranslationKey, variables: Record<string, string> = {}): string {
@@ -598,7 +594,51 @@ export default class TaskManagerPlugin extends Plugin {
   }
 
   async loadSettings(): Promise<void> {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const stored: unknown = await this.loadData();
+    if (!isRecord(stored)) {
+      this.settings = { ...DEFAULT_SETTINGS };
+      return;
+    }
+
+    this.settings = {
+      language:
+        stored.language === "system" ||
+        stored.language === "zh-CN" ||
+        stored.language === "en"
+          ? stored.language
+          : DEFAULT_SETTINGS.language,
+      staleTaskDays:
+        typeof stored.staleTaskDays === "number" &&
+        Number.isInteger(stored.staleTaskDays) &&
+        stored.staleTaskDays >= 1 &&
+        stored.staleTaskDays <= 3650
+          ? stored.staleTaskDays
+          : DEFAULT_SETTINGS.staleTaskDays,
+      askCompletionTime:
+        typeof stored.askCompletionTime === "boolean"
+          ? stored.askCompletionTime
+          : DEFAULT_SETTINGS.askCompletionTime,
+      dailyFolder:
+        typeof stored.dailyFolder === "string"
+          ? stored.dailyFolder
+          : DEFAULT_SETTINGS.dailyFolder,
+      futureTaskFolder:
+        typeof stored.futureTaskFolder === "string"
+          ? stored.futureTaskFolder
+          : DEFAULT_SETTINGS.futureTaskFolder,
+      filenamePattern:
+        typeof stored.filenamePattern === "string"
+          ? stored.filenamePattern
+          : DEFAULT_SETTINGS.filenamePattern,
+      customTemplate:
+        typeof stored.customTemplate === "string"
+          ? stored.customTemplate
+          : DEFAULT_SETTINGS.customTemplate,
+      includeTitle:
+        typeof stored.includeTitle === "boolean"
+          ? stored.includeTitle
+          : DEFAULT_SETTINGS.includeTitle,
+    };
   }
 
   async saveSettings(): Promise<void> {
@@ -616,4 +656,8 @@ export default class TaskManagerPlugin extends Plugin {
       }
     }
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }

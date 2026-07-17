@@ -72,7 +72,7 @@ export class FutureTaskModal extends Modal {
       cls: "mod-cta",
       attr: { type: "button" },
     });
-    confirm.addEventListener("click", async () => {
+    const submit = async (): Promise<void> => {
       if (this.submitting) {
         return;
       }
@@ -100,7 +100,8 @@ export class FutureTaskModal extends Modal {
         this.submitting = false;
         confirm.disabled = false;
       }
-    });
+    };
+    confirm.addEventListener("click", () => void submit());
   }
 
   onClose(): void {

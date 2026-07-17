@@ -1,8 +1,8 @@
 {
   "id": "task-manager",
   "name": "Task Manager",
-  "version": "0.1.1",
-  "minAppVersion": "1.5.0",
+  "version": "0.1.2",
+  "minAppVersion": "1.13.0",
   "description": "Manage tasks and create configurable daily work reports from a compact sidebar.",
   "author": "ITNQ18",
   "isDesktopOnly": false
