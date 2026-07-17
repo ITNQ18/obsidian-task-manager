@@ -36,22 +36,12 @@ jobs:
           cp main.js manifest.json styles.css release/task-manager/
           cd release
           zip -r ../task-manager.zip task-manager
-      - name: Attest main.js
-        uses: actions/attest-build-provenance@v4
+      - name: Attest Obsidian release assets
+        uses: actions/attest-build-provenance@v2
         with:
-          subject-path: main.js
-      - name: Attest styles.css
-        uses: actions/attest-build-provenance@v4
-        with:
-          subject-path: styles.css
-      - name: Attest manifest.json
-        uses: actions/attest-build-provenance@v4
-        with:
-          subject-path: manifest.json
-      - name: Attest manual installation package
-        uses: actions/attest-build-provenance@v4
-        with:
-          subject-path: task-manager.zip
+          subject-path: |
+            main.js
+            styles.css
       - name: Create GitHub release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
