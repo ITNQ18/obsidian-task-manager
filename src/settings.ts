@@ -2,6 +2,7 @@ import {
   App,
   Component,
   MarkdownRenderer,
+  Notice,
   PluginSettingTab,
   Setting,
   TextAreaComponent,
@@ -15,6 +16,7 @@ import {
   formatFilename,
   renderTemplate,
 } from "./core";
+import { FolderSelectionModal } from "./folder-modal";
 import type { TranslationKey } from "./i18n";
 import {
   attachNativeContextMenu,
@@ -90,9 +92,178 @@ const SETTING_KEYS = new Set<keyof TaskManagerSettings>([
 
 export class TaskManagerSettingTab extends PluginSettingTab {
   private templatePreviewMode = false;
+  private legacyPreviewCleanup: (() => void) | null = null;
 
   constructor(app: App, private readonly plugin: TaskManagerPlugin) {
     super(app, plugin);
+  }
+
+  display(): void {
+    const { containerEl } = this;
+    const t = this.plugin.t.bind(this.plugin);
+    this.legacyPreviewCleanup?.();
+    this.legacyPreviewCleanup = null;
+    containerEl.empty();
+    containerEl.addClass("task-manager-settings");
+
+    new Setting(containerEl).setName(t("settingsTitle")).setHeading();
+    new Setting(containerEl)
+      .setName(t("languageName"))
+      .setDesc(t("languageDescription"))
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("system", t("languageSystem"))
+          .addOption("zh-CN", t("languageChinese"))
+          .addOption("en", t("languageEnglish"))
+          .setValue(this.plugin.settings.language)
+          .onChange((value) => void this.updateLanguage(value)),
+      );
+
+    new Setting(containerEl).setName(t("taskHomeHeading")).setHeading();
+    new Setting(containerEl)
+      .setName(t("staleTaskDaysName"))
+      .setDesc(t("staleTaskDaysDescription"))
+      .addText((text) => {
+        text
+          .setValue(String(this.plugin.settings.staleTaskDays))
+          .onChange((value) => void this.updateStaleTaskDays(value));
+        text.inputEl.type = "number";
+        text.inputEl.min = "1";
+        text.inputEl.max = "3650";
+        text.inputEl.step = "1";
+      });
+    new Setting(containerEl)
+      .setName(t("askCompletionTimeName"))
+      .setDesc(t("askCompletionTimeDescription"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.askCompletionTime)
+          .onChange((value) => void this.updateBooleanSetting("askCompletionTime", value)),
+      );
+    new Setting(containerEl)
+      .setName(t("deadlineFormatName"))
+      .setDesc(t("deadlineFormatDescription"));
+
+    new Setting(containerEl)
+      .setName(t("futureTaskSettingsHeading"))
+      .setHeading();
+    this.renderFolderSetting(containerEl, "futureTaskFolder");
+
+    new Setting(containerEl).setName(t("storageHeading")).setHeading();
+    this.renderFolderSetting(containerEl, "dailyFolder");
+
+    new Setting(containerEl).setName(t("filenameHeading")).setHeading();
+    const filenameSetting = new Setting(containerEl)
+      .setName(t("filenamePatternName"))
+      .setDesc(t("filenamePatternDescription"));
+    this.renderFilenameSettings(filenameSetting);
+
+    new Setting(containerEl).setName(t("templateHeading")).setHeading();
+    new Setting(containerEl)
+      .setName(t("includeTitleName"))
+      .setDesc(t("includeTitleDescription"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.includeTitle)
+          .onChange((value) => void this.updateBooleanSetting("includeTitle", value)),
+      );
+    const templateSetting = new Setting(containerEl)
+      .setName(t("templateName"))
+      .setDesc(t("templateDescription"));
+    this.legacyPreviewCleanup = this.renderTemplateSettings(templateSetting);
+  }
+
+  private async updateLanguage(value: string): Promise<void> {
+    if (value !== "system" && value !== "zh-CN" && value !== "en") {
+      return;
+    }
+    this.plugin.settings.language = value;
+    await this.plugin.saveSettings();
+    this.display();
+  }
+
+  private async updateStaleTaskDays(value: string): Promise<void> {
+    const days = Number(value);
+    if (!Number.isInteger(days) || days < 1 || days > 3650) {
+      return;
+    }
+    this.plugin.settings.staleTaskDays = days;
+    await this.plugin.saveSettings();
+  }
+
+  private async updateBooleanSetting(
+    key: "askCompletionTime" | "includeTitle",
+    value: boolean,
+  ): Promise<void> {
+    this.plugin.settings[key] = value;
+    await this.plugin.saveSettings();
+  }
+
+  private renderFolderSetting(
+    containerEl: HTMLElement,
+    key: "dailyFolder" | "futureTaskFolder",
+  ): void {
+    const t = this.plugin.t.bind(this.plugin);
+    const isFuture = key === "futureTaskFolder";
+    const setting = new Setting(containerEl)
+      .setName(t(isFuture ? "futureTaskFolderLabel" : "folderLabel"))
+      .setDesc(
+        t(isFuture ? "futureTaskStorageDescription" : "storageDescription"),
+      )
+      .addText((text) => {
+        text
+          .setPlaceholder(t("folderUnconfigured"))
+          .setValue(this.plugin.settings[key]);
+        text.inputEl.readOnly = true;
+      });
+
+    setting.addButton((button) =>
+      button.setButtonText(t("chooseFolder")).onClick(() => {
+        new FolderSelectionModal(
+          this.app,
+          this.plugin,
+          async (path) => {
+            this.plugin.settings[key] = path;
+            await this.plugin.saveSettings();
+            new Notice(
+              t(isFuture ? "futureTaskFolderConfigured" : "folderConfigured", {
+                path,
+              }),
+            );
+            this.display();
+          },
+          isFuture
+            ? {
+                initialPath: this.plugin.settings.futureTaskFolder,
+                title: t("futureTaskFolderModalTitle"),
+                description: t("futureTaskFolderModalDescription"),
+                placeholder: t("futureTaskFolderPlaceholder"),
+                label: t("futureTaskFolderLabel"),
+                requiredMessage: t("futureTaskFolderRequired"),
+              }
+            : undefined,
+        ).open();
+      }),
+    );
+    setting.addButton((button) =>
+      button
+        .setButtonText(t("clearFolder"))
+        .setWarning()
+        .setDisabled(!this.plugin.settings[key])
+        .onClick(() => void this.clearFolderSetting(key)),
+    );
+  }
+
+  private async clearFolderSetting(
+    key: "dailyFolder" | "futureTaskFolder",
+  ): Promise<void> {
+    const isFuture = key === "futureTaskFolder";
+    this.plugin.settings[key] = "";
+    await this.plugin.saveSettings();
+    new Notice(
+      this.plugin.t(isFuture ? "futureTaskFolderCleared" : "folderCleared"),
+    );
+    this.display();
   }
 
   getSettingDefinitions(): SettingDefinitionItem<
@@ -257,7 +428,7 @@ export class TaskManagerSettingTab extends PluginSettingTab {
 
     await this.plugin.saveSettings();
     if (key === "language") {
-      this.update();
+      this.display();
     }
   }
 
@@ -333,7 +504,7 @@ export class TaskManagerSettingTab extends PluginSettingTab {
   private async resetFilenamePattern(): Promise<void> {
     this.plugin.settings.filenamePattern = "";
     await this.plugin.saveSettings();
-    this.update();
+    this.display();
   }
 
   private renderTemplateSettings(setting: Setting): () => void {
