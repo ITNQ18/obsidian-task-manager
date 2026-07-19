@@ -211,6 +211,44 @@ test("categorizes today, recent, future, stale, and overdue tasks", () => {
   assert.equal(visible.includes("today-daily-ignored"), false);
 });
 
+test("reclassifies daily and dated tasks when the current date advances", () => {
+  const task = (
+    text: string,
+    sourceDate: string,
+    dueDate: string | null = null,
+    dailyDate: string | null = null,
+  ): TaskRecord => ({
+    text,
+    sourceDate,
+    dueDate,
+    dueTime: null,
+    createdDate: null,
+    dailyDate,
+    path: `${text}.md`,
+    line: 0,
+    rawLine: `- [ ] ${text}`,
+  });
+  const tasks = [
+    task("daily", "2026-07-17", null, "2026-07-17"),
+    task("dated", "2026-07-17", "2026-07-20"),
+  ];
+
+  const nextDay = categorizeTasks(tasks, new Date(2026, 6, 18, 12), 7);
+  assert.deepEqual(nextDay.today.map(({ text }) => text), ["daily"]);
+  assert.deepEqual(nextDay.future.map(({ text }) => text), ["dated"]);
+
+  const recent = categorizeTasks(tasks, new Date(2026, 6, 19, 12), 7);
+  assert.deepEqual(recent.recent.map(({ text }) => text), ["daily"]);
+  assert.deepEqual(recent.future.map(({ text }) => text), ["dated"]);
+
+  const dueToday = categorizeTasks(tasks, new Date(2026, 6, 20, 12), 7);
+  assert.deepEqual(dueToday.today.map(({ text }) => text), ["dated"]);
+
+  const later = categorizeTasks(tasks, new Date(2026, 6, 25, 12), 7);
+  assert.deepEqual(later.stale.map(({ text }) => text), ["daily"]);
+  assert.deepEqual(later.overdue.map(({ text }) => text), ["dated"]);
+});
+
 test("completes a task using native checkbox syntax and a timestamp", () => {
   assert.equal(
     markTaskLineComplete("- [ ] 提交版本", new Date(2026, 6, 17, 15, 30)),

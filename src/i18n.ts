@@ -8,7 +8,7 @@ const translations = {
     moduleNavigation: "功能导航",
     taskDashboardLoading: "正在读取未完成任务…",
     todayPending: "今日待完成",
-    recentPending: "昨日未完成（未达到 {days} 天）",
+    recentPending: "近期未完成（未达到 {days} 天）",
     futureTasks: "未来计划",
     staleTasks: "长期未完成",
     overdueTasks: "已逾期",
@@ -76,7 +76,7 @@ const translations = {
     taskHomeHeading: "任务主页",
     staleTaskDaysName: "长期未完成阈值",
     staleTaskDaysDescription:
-      "默认 7 天，从计划完成日开始累计。日报任务的计划完成日为日报日期的下一天；未达到阈值时显示在“昨日未完成”，达到后进入“长期未完成”。",
+      "默认 7 天，从计划完成日开始累计。日报任务的计划完成日为日报日期的下一天；超过计划日但未达到阈值时显示在“近期未完成”，达到后进入“长期未完成”。",
     askCompletionTimeName: "完成时询问时间",
     askCompletionTimeDescription:
       "关闭时自动记录当前时间；开启后，点击完成任务时可以自行选择完成时间。",
@@ -186,7 +186,7 @@ const translations = {
     moduleNavigation: "Feature navigation",
     taskDashboardLoading: "Loading incomplete tasks…",
     todayPending: "Due today",
-    recentPending: "Previously unfinished (under {days} days)",
+    recentPending: "Recently unfinished (under {days} days)",
     futureTasks: "Future plans",
     staleTasks: "Long-unfinished",
     overdueTasks: "Overdue",
@@ -254,7 +254,7 @@ const translations = {
     taskHomeHeading: "Task home",
     staleTaskDaysName: "Long-unfinished threshold",
     staleTaskDaysDescription:
-      "Defaults to 7 days and starts from the planned completion date. A daily-report task is planned for the day after its report date; it stays under Previously unfinished until it reaches this threshold.",
+      "Defaults to 7 days and starts from the planned completion date. A daily-report task is planned for the day after its report date; after that date it stays under Recently unfinished until it reaches this threshold.",
     askCompletionTimeName: "Ask for completion time",
     askCompletionTimeDescription:
       "When off, the current time is recorded automatically. When on, you can choose a time before completing a task.",

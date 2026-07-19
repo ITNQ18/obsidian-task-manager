@@ -67,6 +67,7 @@ const DEFAULT_SETTINGS: TaskManagerSettings = {
 
 export default class TaskManagerPlugin extends Plugin {
   settings: TaskManagerSettings = { ...DEFAULT_SETTINGS };
+  private currentDateKey = formatLocalDateKey(new Date());
 
   async onload(): Promise<void> {
     await this.loadSettings();
@@ -101,6 +102,18 @@ export default class TaskManagerPlugin extends Plugin {
     this.registerEvent(this.app.vault.on("delete", refreshTaskManagerState));
     this.registerEvent(this.app.vault.on("rename", refreshTaskManagerState));
     this.registerEvent(this.app.vault.on("modify", refreshTaskManagerState));
+
+    this.registerInterval(
+      window.setInterval(() => this.refreshViewsWhenDateChanges(), 60_000),
+    );
+    this.registerDomEvent(window, "focus", () =>
+      this.refreshViewsWhenDateChanges(),
+    );
+    this.registerDomEvent(document, "visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        this.refreshViewsWhenDateChanges();
+      }
+    });
 
     this.app.workspace.onLayoutReady(() => {
       void this.activateView(false);
@@ -146,9 +159,9 @@ export default class TaskManagerPlugin extends Plugin {
       return exact;
     }
     return (
-      this.app.vault
-        .getMarkdownFiles()
-        .find((file) => this.isDailyReportFileForDate(file, date)) ?? null
+      this.getMarkdownFilesInFolder(this.settings.dailyFolder).find((file) =>
+        this.isDailyReportFileForDate(file, date),
+      ) ?? null
     );
   }
 
@@ -168,14 +181,39 @@ export default class TaskManagerPlugin extends Plugin {
 
   async getTaskBuckets(now = new Date()): Promise<TaskBuckets> {
     const futureTaskPath = this.getFutureTaskPath();
-    const files = this.app.vault
-      .getMarkdownFiles()
-      .filter((file) => !isIgnoredVaultPath(file.path));
+    const sources = new Map<
+      string,
+      { file: TFile; dailyDate: string | null; isFutureTaskFile: boolean }
+    >();
+
+    for (const file of this.getMarkdownFilesInFolder(
+      this.settings.dailyFolder,
+    )) {
+      const dailyDate = this.getDailyReportDate(file);
+      if (dailyDate) {
+        sources.set(file.path, {
+          file,
+          dailyDate,
+          isFutureTaskFile: file.path === futureTaskPath,
+        });
+      }
+    }
+
+    const futureTaskFile = futureTaskPath
+      ? this.app.vault.getAbstractFileByPath(futureTaskPath)
+      : null;
+    if (futureTaskFile instanceof TFile) {
+      sources.set(futureTaskFile.path, {
+        file: futureTaskFile,
+        dailyDate: null,
+        isFutureTaskFile: true,
+      });
+    }
+
     const taskGroups = await Promise.all(
-      files.map(async (file): Promise<TaskRecord[]> => {
+      Array.from(sources.values()).map(async (source): Promise<TaskRecord[]> => {
+        const { file, dailyDate, isFutureTaskFile } = source;
         const content = await this.app.vault.cachedRead(file);
-        const isFutureTaskFile = file.path === futureTaskPath;
-        const dailyDate = this.getDailyReportDate(file);
         const fallbackDate =
           dailyDate ??
           extractDateKey(file.basename) ??
@@ -207,6 +245,42 @@ export default class TaskManagerPlugin extends Plugin {
       now,
       Math.max(1, this.settings.staleTaskDays),
     );
+  }
+
+  private getMarkdownFilesInFolder(folderPath: string): TFile[] {
+    if (!folderPath) {
+      return [];
+    }
+    const normalized = normalizePath(folderPath.replace(/^\/+|\/+$/gu, ""));
+    const root = this.app.vault.getAbstractFileByPath(normalized);
+    if (!(root instanceof TFolder)) {
+      return [];
+    }
+
+    const files: TFile[] = [];
+    const visit = (folder: TFolder): void => {
+      for (const child of folder.children) {
+        if (isIgnoredVaultPath(child.path)) {
+          continue;
+        }
+        if (child instanceof TFolder) {
+          visit(child);
+        } else if (child instanceof TFile && child.extension === "md") {
+          files.push(child);
+        }
+      }
+    };
+    visit(root);
+    return files;
+  }
+
+  private refreshViewsWhenDateChanges(): void {
+    const dateKey = formatLocalDateKey(new Date());
+    if (dateKey === this.currentDateKey) {
+      return;
+    }
+    this.currentDateKey = dateKey;
+    this.refreshViews();
   }
 
   private isDailyReportFileForDate(file: TFile, date: Date): boolean {
